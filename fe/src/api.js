@@ -1,33 +1,25 @@
-// fe/api.js
+// fe/src/api.js
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:8000';  // FastAPI 서버의 URL
+// FastAPI 서버 주소
+const API_URL = 'http://localhost:8000';
 
-export const searchByTitle = async (query, limit = 4, offset = 0) => {
+export const findSimilarArticles = async (date, query, userId) => {
     try {
-        const response = await axios.get(`${API_URL}/search/title`, {
-            params: { query, limit, offset }
+        const response = await axios.get(`${API_URL}/search/`, {
+            params: { date, query, user_id: userId }
         });
         return response.data;
     } catch (error) {
-        console.error('Error fetching articles by title:', error);
+        console.error('유사한 기사 찾기 오류:', error);
         throw error;
     }
 };
 
-export const searchByKeyword = async (query) => {
-    try {
-        const response = await axios.get(`${API_URL}/search/keyword/${query}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching articles by keyword:', error);
-        throw error;
-    }
-};
 
 export const getArticle = async (articleId) => {
     try {
-        const response = await axios.get(`${API_URL}/article/${articleId}`);
+        const response = await axios.get(`${API_URL}/article/infer/${articleId}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching article by ID:', error);

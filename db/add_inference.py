@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 
 '''
-add_inference.py
 모델을 불러와서 inference한 결과를 db에 새로운 열로서 추가
 db_upload.py 실행후에 추가
 
@@ -49,29 +48,40 @@ def predict(model, tokenizer, content):
         outputs = model(**inputs)
         logits = outputs.logits
 
-        #softmax = nn.Softmax(dim=1)  # dim=1은 클래스 차원에 대해 softmax를 적용
-        #preds = softmax(logits)
+        softmax = nn.Softmax(dim=1)  # dim=1은 클래스 차원에 대해 softmax를 적용
+        preds = softmax(logits)
 
-    logits = logits.cpu().numpy().round(4)
+        
 
-    return json.dumps(logits.tolist())
 
-def add_inference_column(cursor):
+    preds_rounded = preds.cpu().numpy().tolist()
+    logits_rounded = logits.cpu().numpy().tolist()
+
+
+    return json.dumps(preds_rounded), json.dumps(logits_rounded)
+
+def add_inference_columns(cursor):
     """
-    데이터베이스에 새로운 열 'inference' 추가
+    데이터베이스에 새로운 열 'preds_rounded'와 'logits_rounded' 추가
     """
     try:
         cursor.execute(
             """
             ALTER TABLE article
-            ADD COLUMN inference JSON
+            ADD COLUMN preds_rounded TEXT
             """
         )
-        print("새로운 열 'inference'가 추가되었습니다.")
+        cursor.execute(
+            """
+            ALTER TABLE article
+            ADD COLUMN logits_rounded TEXT
+            """
+        )
+        print("새로운 열 'preds_rounded'와 'logits_rounded'가 추가되었습니다.")
     except Error as err:
         print(f"열 추가 오류: {err}")
 
-def update_inference(cursor, article_id, inference):
+def update_inference(cursor, article_id, preds_rounded, logits_rounded):
     """
     데이터베이스에 예측 결과 업데이트
     """
@@ -79,10 +89,10 @@ def update_inference(cursor, article_id, inference):
         cursor.execute(
             """
             UPDATE article
-            SET inference = %s
+            SET preds_rounded = %s, logits_rounded = %s
             WHERE article_id = %s
             """,
-            (inference, article_id)
+            (preds_rounded, logits_rounded, article_id)
         )
         print(f"article_id {article_id}의 예측 결과가 업데이트되었습니다.")
     except Error as err:
@@ -109,8 +119,8 @@ try:
         print("데이터베이스에 성공적으로 연결되었습니다.")
         cursor = conn.cursor()
 
-        # 새로운 열 'new_inference' 추가
-        add_inference_column(cursor)
+        # 새로운 열 'preds_rounded'와 'logits_rounded' 추가
+        add_inference_columns(cursor)
         
         # 모델 로드
         model, tokenizer = load_model()
@@ -121,8 +131,8 @@ try:
         
         for row in rows:
             article_id, content = row
-            inference = predict(model, tokenizer, content)
-            update_inference(cursor, article_id, inference)
+            preds_rounded, logits_rounded = predict(model, tokenizer, content)
+            update_inference(cursor, article_id, preds_rounded, logits_rounded)
         
         conn.commit()
 

@@ -2,6 +2,17 @@ import pandas as pd
 import os
 import json
 
+"""
+db/make_json.py: raw_data에 article_data url 기준으로 inner join하여 json파일 생성
+-> innerjoin이 안된 기사들 존재? why?
+
+실행방법:
+python make_json.py
+
+향후 개선방안:
+innerjoin이 안된 기사들 해결
+"""
+
 # 경로 설정
 raw_data_path = "../src/raw_data"
 article_data_path = "../src/article_data"
@@ -51,17 +62,3 @@ for prefix, count in unmatched_counts.items():
 
 print("작업 완료! JSON 파일이 저장되었으며 매칭되지 않은 URL 개수가 출력되었습니다.")
 
-
-
-
-
-"""
-db/make_json.py: raw_data에 article_data url 기준으로 inner join하여 json파일 생성
--> innerjoin이 안된 기사들 존재? why?
-
-실행방법:
-python make_json.py
-
-향후 개선방안:
-innerjoin이 안된 기사들 해결
-"""
